@@ -26,7 +26,13 @@ export async function action({
         "Content-Type": "application/json",
         cookie,
       },
-      body: JSON.stringify({ title, description, priority, dueDate }),
+      body: JSON.stringify({
+        title,
+        description,
+        isDone: false,
+        priority,
+        dueDate,
+      }),
     }
   );
 

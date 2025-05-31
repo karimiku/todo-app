@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type { Route } from "./+types/todos.index";
-import { TodoList } from "../components/TodoList";
-import { NewTodoButton } from "../components/NewTodoButton";
 import type { Todo } from "../types/types";
-import type { LoaderArgs } from "../types/cloudflare";
+import type { LoaderArgs, ActionArgs } from "../types/cloudflare";
+import { NewTodoButton } from "~/components/NewTodoButton";
 
 export async function loader({ request, context }: LoaderArgs) {
   const cookie = request.headers.get("cookie") || "";
@@ -14,39 +13,90 @@ export async function loader({ request, context }: LoaderArgs) {
   return data.todos.sort((a, b) => a.priority - b.priority);
 }
 
-export default function TodosIndex({ loaderData }: Route.ComponentProps) {
-  const [todos, setTodos] = useState<Todo[]>(loaderData ?? []);
+export async function action({ request, context }: ActionArgs) {
+  const cookie = request.headers.get("cookie") || "";
+  const formData = await request.formData();
+  const actionType = formData.get("_action");
+  const todoId = formData.get("id");
 
-  const handleToggle = async (todo: Todo): Promise<void> => {
-    const updated: Todo = { ...todo, isDone: !todo.isDone };
-    setTodos((prev: Todo[]) =>
-      prev.map((t: Todo) => (t.id === todo.id ? updated : t))
+  if (!todoId || typeof todoId !== "string") {
+    return new Response("Invalid ID", { status: 400 });
+  }
+
+  if (actionType === "toggle") {
+    const isDone = formData.get("isDone") === "true";
+    const res = await fetch(
+      `${context.cloudflare.env.API_URL}/todos/${todoId}/toggle`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          cookie,
+        },
+        body: JSON.stringify({ isDone }),
+      }
     );
+    return new Response(null, { status: res.status });
+  }
 
-    await fetch(`${import.meta.env.API_URL}/todos/${todo.id}/toggle`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ isDone: updated.isDone }),
-    });
-  };
+  if (actionType === "delete") {
+    const res = await fetch(
+      `${context.cloudflare.env.API_URL}/todos/${todoId}`,
+      {
+        method: "DELETE",
+        headers: { cookie },
+      }
+    );
+    return new Response(null, { status: res.status });
+  }
 
-  const handleDelete = async (id: string): Promise<void> => {
-    const res = await fetch(`${import.meta.env.API_URL}/todos/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+  return new Response("Invalid action", { status: 400 });
+}
 
-    if (res.ok) {
-      setTodos((prev: Todo[]) => prev.filter((t: Todo) => t.id !== id));
-    }
-  };
+export default function TodosIndex({ loaderData }: Route.ComponentProps) {
+  const [todos] = useState<Todo[]>(loaderData ?? []);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-6 text-center">Todo一覧</h2>
       <NewTodoButton />
-      <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} />
+
+      <ul className="space-y-4">
+        {todos.map((todo) => (
+          <li
+            key={todo.id}
+            className="flex items-center justify-between border p-4 rounded"
+          >
+            <form method="post" className="flex items-center gap-2">
+              <input type="hidden" name="_action" value="toggle" />
+              <input type="hidden" name="id" value={todo.id} />
+              <input
+                type="checkbox"
+                name="isDone"
+                value={!todo.isDone ? "true" : "false"}
+                defaultChecked={todo.isDone}
+                onChange={(e) => {
+                  e.currentTarget.form?.submit();
+                }}
+              />
+              <span className={todo.isDone ? "line-through" : ""}>
+                {todo.title}
+              </span>
+            </form>
+
+            <form method="post">
+              <input type="hidden" name="_action" value="delete" />
+              <input type="hidden" name="id" value={todo.id} />
+              <button
+                type="submit"
+                className="text-red-500 hover:underline ml-2"
+              >
+                削除
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,48 +1,38 @@
-import { Link } from "react-router";
-import type { Todo } from "../types/types";
+// import type { Todo } from "../types/types";
 
-type Props = {
-  todo: Todo;
-  onToggle: (todo: Todo) => void;
-  onDelete: (id: string) => void;
-};
+// type Props = {
+//   todo: Todo;
+//   onToggle: (todo: Todo) => void; // 今回は使わない（form経由で自動submit）
+//   onDelete: (id: string) => void; // 同上
+// };
 
-export function TodoItem({ todo, onToggle, onDelete }: Props) {
-  return (
-    <li className="flex justify-between items-start p-4 border rounded-lg shadow-sm bg-white">
-      <input
-        type="checkbox"
-        checked={todo.isDone}
-        onChange={() => onToggle(todo)}
-        className="mr-4 mt-1"
-      />
-      <div className="flex-1">
-        <h3
-          className={`text-lg font-semibold ${
-            todo.isDone ? "line-through text-gray-400" : ""
-          }`}
-        >
-          {todo.title}
-        </h3>
-        <p className="text-sm text-gray-600">{todo.description}</p>
-        <div className="text-xs text-gray-500 mt-1">
-          締切: {new Date(todo.dueDate).toLocaleDateString()} | 優先度:{" "}
-          {todo.priority}
-        </div>
-      </div>
-      <div className="ml-4 space-x-2">
-        <Link to={todo.id} className="text-blue-600 hover:underline text-sm">
-          編集
-        </Link>
-        <button
-          className="text-red-600 hover:underline text-sm"
-          onClick={() => {
-            if (confirm("本当に削除しますか？")) onDelete(todo.id);
-          }}
-        >
-          削除
-        </button>
-      </div>
-    </li>
-  );
-}
+// export function TodoItem({ todo }: Props) {
+//   return (
+//     <li className="flex items-center justify-between border p-4 rounded">
+//       {/* ✅ isDone 切り替え */}
+//       <form method="post" className="flex items-center space-x-3">
+//         <input type="hidden" name="_action" value="toggle" />
+//         <input type="hidden" name="id" value={todo.id} />
+//         <input
+//           type="checkbox"
+//           name="isDone"
+//           value={!todo.isDone ? "true" : "false"}
+//           defaultChecked={todo.isDone}
+//           onChange={(e) => e.currentTarget.form?.submit()}
+//         />
+//         <span className={todo.isDone ? "line-through text-gray-500" : ""}>
+//           {todo.title}
+//         </span>
+//       </form>
+
+//       {/* ❌ 削除ボタン */}
+//       <form method="post">
+//         <input type="hidden" name="_action" value="delete" />
+//         <input type="hidden" name="id" value={todo.id} />
+//         <button type="submit" className="text-red-500 hover:text-red-700 ml-4">
+//           削除
+//         </button>
+//       </form>
+//     </li>
+//   );
+// }
