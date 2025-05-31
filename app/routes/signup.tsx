@@ -3,8 +3,8 @@ import type { ActionArgs } from "../types/cloudflare";
 
 export async function action({ request, context }: ActionArgs) {
   const form = await request.formData();
-  const email = form.get("email")?.toString() || "";
-  const password = form.get("password")?.toString() || "";
+  const email = form.get("email");
+  const password = form.get("password");
   if (!email || !password) {
     return { error: "メールアドレスとパスワードを入力してください。" };
   }
@@ -16,10 +16,10 @@ export async function action({ request, context }: ActionArgs) {
   });
 
   if (!res.ok) {
-    const err = (await res.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    return { error: err?.error };
+    const errText = await res.text();
+    return new Response(errText || "登録失敗", {
+      status: res.status,
+    });
   }
 
   return redirect("/login");
@@ -27,15 +27,16 @@ export async function action({ request, context }: ActionArgs) {
 
 export default function SignupPage() {
   const actionData = useActionData();
+  const errorMessage =
+    typeof actionData === "string" ? actionData : actionData?.error;
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold text-center mb-6">新規登録</h2>
-
-        {actionData?.error && (
+        {errorMessage && (
           <p className="text-red-500 text-sm mb-4 text-center">
-            {actionData.error}
+            {errorMessage}
           </p>
         )}
 
