@@ -16,10 +16,10 @@ export async function action({ request, context }: ActionArgs) {
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    return new Response(errText || "登録失敗", {
-      status: res.status,
-    });
+    const err = (await res.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    return { error: err?.error ?? "登録に失敗しました" };
   }
 
   return redirect("/login");
@@ -27,16 +27,14 @@ export async function action({ request, context }: ActionArgs) {
 
 export default function SignupPage() {
   const actionData = useActionData();
-  const errorMessage =
-    typeof actionData === "string" ? actionData : actionData?.error;
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold text-center mb-6">新規登録</h2>
-        {errorMessage && (
+        {actionData?.error && (
           <p className="text-red-500 text-sm mb-4 text-center">
-            {errorMessage}
+            {actionData.error}
           </p>
         )}
 
