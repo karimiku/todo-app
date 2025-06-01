@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { redirect, useActionData } from "react-router";
 import { TodoForm } from "../components/TodoForm";
 import type { ActionArgs } from "~/types/cloudflare";
 
@@ -9,6 +9,16 @@ export async function action({ request, context }: ActionArgs) {
   const priority = Number(form.get("priority"));
   const dueDate = form.get("dueDate");
   const cookie = request.headers.get("cookie") || "";
+
+  if (!title || !description || !priority || !dueDate) {
+    return new Response(
+      JSON.stringify({ error: "すべての項目を入力してください" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 
   const res = await fetch(`${context.cloudflare.env.API_URL}/todos`, {
     method: "POST",
@@ -25,5 +35,12 @@ export async function action({ request, context }: ActionArgs) {
 }
 
 export default function NewTodo() {
-  return <TodoForm submitLabel="登録" heading="Todo登録" />;
+  const actionData = useActionData();
+  return (
+    <TodoForm
+      submitLabel="登録"
+      heading="Todo登録"
+      errorMessage={actionData?.error}
+    />
+  );
 }

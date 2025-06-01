@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { redirect, useActionData } from "react-router";
 import type { Route } from "./+types/todos.$id";
 import { TodoForm } from "~/components/TodoForm";
 import type {
@@ -17,6 +17,16 @@ export async function action({
   const priority = Number(form.get("priority"));
   const dueDate = form.get("dueDate")?.toString() || "";
   const cookie = request.headers.get("cookie") || "";
+
+  if (!title || !description || !priority || !dueDate) {
+    return new Response(
+      JSON.stringify({ error: "すべての項目を入力してください" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 
   const res = await fetch(
     `${context.cloudflare.env.API_URL}/todos/${params.id}`,
@@ -37,7 +47,9 @@ export async function action({
   );
 
   if (!res.ok) {
-    console.error("更新に失敗しました");
+    const errorText = await res.text();
+    console.error("更新に失敗しました:", res.status, errorText);
+    return new Response("更新失敗", { status: 500 });
   }
 
   return redirect("/todos");
@@ -58,7 +70,8 @@ export async function loader({
   );
 
   if (!res.ok) {
-    throw new Error("TODO取得に失敗しました");
+    console.error("TODO取得に失敗:", res.status);
+    throw new Response("TODO取得に失敗", { status: 500 });
   }
 
   const { todo }: any = await res.json();
@@ -66,11 +79,13 @@ export async function loader({
 }
 
 export default function EditTodo({ loaderData }: Route.ComponentProps) {
+  const actionData = useActionData();
   return (
     <TodoForm
       defaultValues={loaderData}
       submitLabel="更新する"
       heading="Todo編集"
+      errorMessage={actionData?.error}
     />
   );
 }

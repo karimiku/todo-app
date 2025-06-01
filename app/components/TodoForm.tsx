@@ -10,9 +10,15 @@ type Props = {
   };
   submitLabel: string;
   heading: string;
+  errorMessage?: string;
 };
 
-export function TodoForm({ defaultValues, submitLabel, heading }: Props) {
+export function TodoForm({
+  defaultValues,
+  submitLabel,
+  heading,
+  errorMessage,
+}: Props) {
   return (
     <div>
       <Form
@@ -20,6 +26,10 @@ export function TodoForm({ defaultValues, submitLabel, heading }: Props) {
         className="max-w-xl mx-auto p-6 space-y-6 bg-white text-gray-900 rounded shadow"
       >
         <h2 className="text-2xl font-bold border-b pb-2">{heading}</h2>
+
+        {errorMessage && (
+          <p className="text-red-600 bg-red-100 p-2 rounded">{errorMessage}</p>
+        )}
 
         <div className="space-y-2">
           <label className="block">タイトル</label>
@@ -49,7 +59,7 @@ export function TodoForm({ defaultValues, submitLabel, heading }: Props) {
             defaultValue={defaultValues?.priority ?? 1}
             className="w-full border rounded p-2"
             min={1}
-            max={5}
+            max={1000}
           />
         </div>
 
@@ -70,6 +80,7 @@ export function TodoForm({ defaultValues, submitLabel, heading }: Props) {
           {submitLabel}
         </button>
       </Form>
+
       <div className="mt-4 text-center">
         <Link to="/todos" className="text-sm text-blue-600 hover:underline">
           ホームに戻る
